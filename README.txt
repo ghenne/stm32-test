@@ -1,4 +1,13 @@
-My playground for learning STM32 MCUs.
+UPDATE: 2014-12-26
+------------------
+
+Most (all?) of this info is outdated. Just use GNU ARM Eclipse plugin with
+OpenOCD and be happy. It works really well now.
+
+
+
+My playground for learning STM32 MCUs
+-------------------------------------
 
 Setting up Eclipse:
 * Install the GNU ARM Eclipse plugin: use
