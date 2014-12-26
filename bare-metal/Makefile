@@ -3,7 +3,7 @@ CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)ld
 OBJCOPY = $(CROSS_COMPILE)objcopy
 SIZE = $(CROSS_COMPILE)size
-CFLAGS += -ffunction-sections -fdata-sections -fno-common -O0 -g3 -mcpu=cortex-m0 -mthumb
+CFLAGS += -ffunction-sections -fdata-sections -fno-common -Os -g3 -mcpu=cortex-m0 -mthumb
 
 all: main.elf
 

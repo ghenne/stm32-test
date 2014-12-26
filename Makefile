@@ -45,6 +45,7 @@ INCLUDES += -I$(TOPDIR)/Libraries/CMSIS/Device/ST/STM32F0xx/Include \
 CFLAGS += -DUSE_STDPERIPH_DRIVER -fno-common -Wall -Os -g3 -mcpu=cortex-m0 -mthumb
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += $(INCLUDES)
+CFLAGS += -Ibaselibc/include/
 
 CROSS_COMPILE ?= arm-none-eabi-
 CC = $(CROSS_COMPILE)gcc
@@ -63,7 +64,18 @@ all: build size
 build: $(RESULT).elf $(RESULT).bin $(RESULT).hex $(RESULT).lst
 
 $(RESULT).elf: $(SOURCES) $(HEADERS) $(LINKER_SCRIPT) $(THIS_MAKEFILE)
-	$(CC) -Wl,-M=$(RESULT).map -Wl,-T$(LINKER_SCRIPT) $(CFLAGS) $(SOURCES) -o $@
+	$(CC) -Wl,-M=$(RESULT).map -Wl,-T$(LINKER_SCRIPT) $(CFLAGS) $(SOURCES) baselibc.a -o $@
+
+OBJECTS = $(SOURCES:.c=.o) $(SOURCES:.s=.o)
+
+#$(RESULT).elf: $(OBJECTS) $(HEADERS) $(LINKER_SCRIPT) $(THIS_MAKEFILE)
+	#$(CC) -Wl,-M=$(RESULT).map -Wl,-T$(LINKER_SCRIPT) $(CFLAGS) $(OBJECTS) baselibc.a -o $@
+
+%.o: %.c $(HEADERS) $(THIS_MAKEFILE)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.s $(HEADERS) $(THIS_MAKEFILE)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 %.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@

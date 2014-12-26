@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Project/STM32F0xx_StdPeriph_Templates/stm32f0xx_it.c 
+  * @file    GPIO/IOToggle/stm32f0xx_it.c 
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    18-May-2012
@@ -29,9 +29,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_it.h"
-#include "main.h"
 
-/** @addtogroup Template_Project
+/** @addtogroup STM32F0xx_StdPeriph_Examples
+  * @{
+  */
+
+/** @addtogroup IOToggle
   * @{
   */
 
@@ -93,14 +96,13 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
-  TimingDelay_Decrement();
 }
 
 /******************************************************************************/
 /*                 STM32F0xx Peripherals Interrupt Handlers                   */
 /*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
 /*  available peripheral interrupt handler's name please refer to the startup */
-/*  file (startup_stm32f0xx.s).                                            */
+/*  file (startup_stm32f0xx.s).                                               */
 /******************************************************************************/
 
 /**
@@ -114,7 +116,82 @@ void SysTick_Handler(void)
 
 /**
   * @}
-  */ 
+  */
 
+/**
+  * @}
+  */
+
+uint8_t buffer1[100];
+uint8_t buffer2[100];
+volatile uint8_t buffer_index;
+volatile uint8_t *readbuffer; // pointer to current read buffer
+volatile uint8_t *writebuffer; // pointer to current write buffer
+volatile uint8_t new_message; // set to one when we have a new line, the reader/consumer must clear it
+
+/**
+  * @brief  This function handles USART1 global interrupt request.
+  * @param  None
+  * @retval None
+  */
+void USART1_IRQHandler(void) 
+{
+	char ch;
+
+	if (USART_GetITStatus(USART1, USART_IT_ORE) == SET) {
+		while (1);
+	}
+
+	if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET) {
+		ch = (USART_ReceiveData(USART1) & 0x7F);
+		// handle overflow by erasing the message
+		if (buffer_index >= 90) {
+			buffer_index = 0;
+			return;
+		}
+		writebuffer[buffer_index++] = ch;
+		if (ch == '\r') {
+			//writebuffer[buffer_index++] = '\r';
+			writebuffer[buffer_index++] = '\n';
+			writebuffer[buffer_index++] = '\0';
+			// we have a whole line, switch buffers around
+			if (writebuffer == buffer1) {
+				writebuffer = buffer2;
+				readbuffer = buffer1;
+			} else {
+				writebuffer = buffer1;
+				readbuffer = buffer2;
+			}
+			buffer_index = 0;
+			new_message = 1;
+		}
+		// NOTE: is this why we had hangs? Because we used
+		// USART_SendData() + block in both interrupt an normal
+		// context?
+		USART_SendData(USART1, ch);
+		/* Loop until the end of transmission */
+		while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET) {
+			/* nop */
+		}
+	}
+
+//	if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+//		/* Read one byte from the receive data register */ 
+//		RxBuffer[RxCount++] = (USART_ReceiveData(USART1) & 0x7F);
+//		if (RxCount == NbrOfDataToRead) {
+//			/* Disable the USART1 Receive interrupt */ 
+//			USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
+//		}
+//	}
+//
+//	if (USART_GetITStatus(USART1, USART_IT_TXE) != RESET) {
+//		/* Write one byte to the transmit data register */ 
+//		USART_SendData(USART1, TxBuffer[TxCount++]);
+//		if (TxCount == NbrOfDataToTransfer) {
+//			/* Disable the USART1 Transmit interrupt */ 
+//			USART_ITConfig(USART1, USART_IT_TXE, DISABLE);
+//		}
+//	}
+}
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -82,6 +82,7 @@ typedef struct
 
 
 
+#define LED_IR  7  // GPIOC, pin 7
 #define LED_BLUE  8  // GPIOC, pin 8
 #define LED_GREEN 9  // GPIOC, pin 9
 
@@ -132,7 +133,8 @@ void init_gpio_led(void)
 	//GPIOC->AFR = // defaults to GPIO?
 
 	// set LED pins as output (CMSIS defines GPIO_MODER_MODER<pin>_0 for this)
-	GPIOC->MODER  = 0x01 << (LED_BLUE*2);
+	GPIOC->MODER  = 0x01 << (LED_IR*2);
+	GPIOC->MODER |= 0x01 << (LED_BLUE*2);
 	GPIOC->MODER |= 0x01 << (LED_GREEN*2);
 
 	//GPIOC->OTYPER configures push-pull vs open drain. Default is push-pull.
@@ -169,32 +171,180 @@ void led_green(int enable)
 	}
 }
 
+void led_ir(int enable)
+{
+	if (enable) {
+		GPIOC->BSRR = 1 << LED_IR;
+	} else {
+		GPIOC->BSRR = (1 << LED_IR) << 16; // upper 16-bits clears corresponding pin
+	}
+}
+
+#define DELAY_US(microseconds) \
+	do { \
+		int us = microseconds; \
+		while (us-- > 0) { \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+			asm("nop"); \
+		} \
+	} while (0)
+
+void delay_us(int us)
+{
+	while (us-- > 0) {
+		asm("nop");
+	}
+}
 
 void delay_ms(int ms)
 {
 	int i;
 
 	while (ms-- > 0) {
-		for (i = 0; i < 570; i++) {  // was 8000==1ms at work
+		for (i = 0; i < 565; i++) {  // was 8000==1ms at work
 			asm("nop"); // __NOP(); // defined in CMSIS, for many compilers
 		}
 	}
 }
 
+void send_header(void)
+{
+	int i;
+
+	for (i = 0; i < 85; i++) {
+		GPIOC->ODR |= (1 << LED_IR);
+		delay_us(17);
+		GPIOC->ODR &= ~(1 << LED_IR);
+		delay_us(17);
+	}
+	delay_ms(2);
+}
+
+void send_one(void)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		GPIOC->ODR |= (1 << LED_IR);
+		delay_us(17);
+		GPIOC->ODR &= ~(1 << LED_IR);
+		delay_us(17);
+	}
+	delay_us(300);
+}
+
+void send_zero(void)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		GPIOC->ODR |= (1 << LED_IR);
+		delay_us(17);
+		GPIOC->ODR &= ~(1 << LED_IR);
+		delay_us(17);
+	}
+	delay_us(600);
+}
+
+void send_command(int throttle, int leftright, int forwardbackward)
+{
+	send_header();
+	// TODO: finish...
+	send_one();
+	send_one();
+	send_zero();
+	send_zero();
+	//send_zero();
+	//send_one();
+}
+
+
+// Put clock output (MCO) on PA8
+void set_clock_on_mco(void)
+{
+	const int no_clock = 0;
+	const int hsi14 = 1;
+	const int lsi = 2;
+	const int lse = 3;
+	const int sysclk = 4;
+	const int hsi = 5;
+	const int hse = 6;
+	const int plldiv2 = 7;
+	// Set MCO[2:0] bits
+	RCC->CFGR &= ~(7 << 24);
+	RCC->CFGR |= sysclk << 24;
+
+	// Enable GPIOA clock so we can read/write its registers
+	RCC->AHBENR |= 1 << 17;
+
+	// Enable alternate function mode for PA8
+	GPIOA->MODER |= 2 << (8*2);
+
+	// set push-pull drive mode (default after reset)
+	GPIOA->OTYPER &= ~(1 << (8));
+
+	// no pull-up/pull-down
+	GPIOA->PUPDR &= ~(3 << (8*2));
+
+	// After reset all I/Os are connected to alternate function 0 (AF0).
+	// This is the mode that MCO is at, so there is nothing more to do :-)
+}
+
+// use the PLL to boost sysclock from 8MHz to 48MHz
+void clock_setup(void)
+{
+	// The MCU starts out with the HSI clock and no PLL. We set the PLL
+	// multiplier, start the PLL and then switch to using PLLCLK instead of
+	// HSI. PLLSRC defaults to HSI/2, so the PLL input is 4 MHz.
+
+	RCC->CFGR &= ~(0xf << 18); // PLLMUL[3:0]: clear
+	RCC->CFGR |= 10 << 18; // PLLMUL[3:0]: set PLL input clock multiplier
+
+	// enable PLL
+	RCC->CR |= 1 << 24; // PLLON = 1;
+	// wait for PLLRDY flag
+	while (!(RCC->CR & (1 << 25))) {
+		/* empty */
+	}
+
+	RCC->CFGR |= 2 << 2; // SW (System clock switch): PLL selected as system clock
+
+	// FIXME: the PLL is OK, but sysclock is still at 8MHz
+}
+
 int main()
 {
 	init_gpio_led();
+	set_clock_on_mco();
+	clock_setup();
 
 	while (1) {
-		led_blue(1);
-		delay_ms(50);
-		led_blue(0);
-		delay_ms(1000);
+		//led_blue(1);
+		//delay_us(100);
+		//led_blue(0);
+		//delay_ms(1);
+		//delay_ms(1000);
 
-		led_green(1);
-		delay_ms(50);
-		led_green(0);
-		delay_ms(1000);
+		//led_green(1);
+		//delay_ms(50);
+		//led_green(0);
+		//delay_ms(1000);
+
+		GPIOC->ODR |= (1 << LED_BLUE);
+		delay_us(1);
+		GPIOC->ODR &= ~(1 << LED_BLUE);
+		delay_us(1);
+
+		//send_command(0, 0, 0);
+		//delay_ms(180);
 	}
 
 	return 0;

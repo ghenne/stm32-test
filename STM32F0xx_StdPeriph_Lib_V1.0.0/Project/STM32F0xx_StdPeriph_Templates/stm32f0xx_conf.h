@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    Project/STM32F0xx_StdPeriph_Templates/stm32f0xx_conf.h 
+  * @file    GPIO/IOToggle/stm32f0xx_conf.h 
   * @author  MCD Application Team
   * @version V1.0.0
   * @date    18-May-2012
