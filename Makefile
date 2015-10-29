@@ -13,34 +13,35 @@
 RESULT ?= main
 
 # Path to the STM32F0xx_StdPeriph_Lib_V1.0.0/ directory
-TOPDIR = STM32F0xx_StdPeriph_Lib_V1.0.0
+TOPDIR = STM32L1xx_StdPeriph_Lib_V1.1.1
 
 SOURCES = \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/TrueSTUDIO/Project/syscalls.c \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/main.c \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/stm32f0xx_it.c \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/system_stm32f0xx.c \
-	  $(TOPDIR)/Libraries/CMSIS/Device/ST/STM32F0xx/Source/Templates/TrueSTUDIO/startup_stm32f0xx.s \
+	  # v1.0.0 $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/TrueSTUDIO/Project/syscalls.c \
+	  $(TOPDIR)/syscalls.c \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/main.c \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/stm32l1xx_it.c \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/system_stm32l1xx.c \
+	  $(TOPDIR)/Libraries/CMSIS/Device/ST/STM32F0xx/Source/Templates/TrueSTUDIO/startup_stm32l1xx.s \
 	  $(wildcard $(TOPDIR)/Libraries/STM32F0xx_StdPeriph_Driver/src/*.c) \
 	  $(TOPDIR)/Utilities/STM32_EVAL/STM320518_EVAL/stm320518_eval.c \
 	  $(TOPDIR)/Utilities/STM32_EVAL/STM320518_EVAL/stm320518_eval_lcd.c
 
 HEADERS = \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/main.h \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/stm32f0xx_conf.h \
-	  $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/stm32f0xx_it.h \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/main.h \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/stm32l1xx_conf.h \
+	  $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/stm32l1xx_it.h \
 	  $(wildcard $(TOPDIR)/Libraries/CMSIS/Include/*.h) \
-	  $(wildcard $(TOPDIR)/Libraries/CMSIS/Device/ST/STM32F0xx/Include/*.h) \
+	  $(wildcard $(TOPDIR)/Libraries/CMSIS/Device/ST/STM32L1xx/Include/*.h) \
 	  $(wildcard $(TOPDIR)/Libraries/STM32F0xx_StdPeriph_Driver/inc/*.h)
 
-LINKER_SCRIPT = $(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates/TrueSTUDIO/Project/stm32_flash.ld
+LINKER_SCRIPT = $(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates/TrueSTUDIO/STM32L152-EVAL/stm32_flash.ld
 
 INCLUDES += -I$(TOPDIR)/Libraries/CMSIS/Device/ST/STM32F0xx/Include \
 	    -I$(TOPDIR)/Libraries/CMSIS/Include \
 	    -I$(TOPDIR)/Libraries/STM32F0xx_StdPeriph_Driver/inc \
 	    -I$(TOPDIR)/Utilities/STM32_EVAL/STM320518_EVAL \
 	    -I$(TOPDIR)/Utilities/STM32_EVAL/Common \
-	    -I$(TOPDIR)/Project/STM32F0xx_StdPeriph_Templates
+	    -I$(TOPDIR)/Project/STM32L1xx_StdPeriph_Templates
 
 CFLAGS += -DUSE_STDPERIPH_DRIVER -fno-common -Wall -Os -g3 -mcpu=cortex-m0 -mthumb
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
